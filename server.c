@@ -53,6 +53,78 @@ void HandleClient(int sock)
    close(sock);
 }
 
+char* encrypt(char *text, int key) 
+{
+	int i, l = strlen(text);
+	int ncount = 0; // Contar las Ñ originales
+	int ncount2 = 0; // Contar las Ñ finales
+	char *code = (char*)malloc(l*sizeof(char)); 
+
+	if (code == NULL) {
+		printf("Error al reservar memoria");
+		error(0);
+	}
+
+	// Manipulacion de la clave
+	key = key%27;
+	if (key == 0)
+		return;
+	if (key < 0)
+		key = key+27;
+
+
+	for (i = 0; i < l; i++) {
+		if (65 <= text[i] && text[i] <= 78) { // A-N
+			code[i-ncount] = text[i] - 65;
+			
+		} else if (79 <= text[i] && text[i] &&  text[i] <= 90) { // O-Z
+			code[i-ncount] = text[i] - 64;
+
+		} else if (text[i] == -61) { // Ñ (consume dos valores del arreglo)
+			code[i-ncount] = 14;
+			ncount++;
+			i++;
+		} else {
+			code[i-ncount] = text[i];
+		}
+	}
+
+	for (i = 0; i < l - ncount; i++) {
+		if (code[i] < 27) {
+			code[i] = (code[i] + key) % 27;
+			if (code[i] == 14) ncount2++;
+	    }
+	}
+
+	char *data = (char*)malloc((l-ncount+ncount2)*sizeof(char));
+	if (data == NULL) {
+		printf("Error al reservar memoria");
+		error(0);
+	}
+	int ncount3 = 0; // The recount
+
+	for (i = 0; i < l - ncount + ncount2; i++) {
+		if (0 <= code[i-ncount3] && code[i-ncount3] <= 13) { // A-N
+			data[i] = code[i-ncount3] + 65;
+		} else if (15 <= code[i-ncount3] && code[i-ncount3] <= 26) { // O-Z
+			data[i] = code[i-ncount3] + 64;
+		} else if (code[i-ncount3] == 14){ // Ñ
+			data[i] = -61; //-61    0xFFFFFFC3
+			i++;
+			data[i] = -111; //-111   0xFFFFFF91
+			ncount3++;
+		} else {
+			data[i] = code[i-ncount3];
+		}
+	}
+	return data;
+}
+
+char* decrypt(char *text, int key) 
+{
+	encrypt(text,-key);
+}
+
 int main(int argc, char *argv[])
 {
    /* int i = 10; */
