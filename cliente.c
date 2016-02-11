@@ -13,15 +13,38 @@
 
 int main(int argc, char *argv[])
 {
-   int sockfd = 0, n = 0;
+   int sockfd = 0, n = 0, clave;
    char recvBuff[BUFFSIZE];
    char sendBuff[1024];
+   FILE *file;
+   char *buffer;
+   long size;
+    
    struct sockaddr_in serv_addr;
 
-   if (argc != 4) {
-      fprintf(stderr, "USAGE: cliente <server_ip> <word> <port>\n");
+   if (argc != 5) {
+      fprintf(stderr, "USAGE: cliente <server_ip> <file> <port> <clave> \n");
       exit(1);
    }
+
+   file = fopen(argv[2],"r");
+   fseek(file, 0, SEEK_END);
+   size = ftell(file);
+   rewind(file);
+
+   clave = atoi(argv[4]);
+   
+   buffer = (char*) malloc (sizeof(char)*size);
+
+   if( fread (buffer, 1, size, file) != size)
+   {
+      fprintf(stderr, "\nError: leyendo ar chivo\n");
+      exit(1);
+   }
+
+   printf("El buffer: ");
+   printf(buffer);
+   printf("\n");
    
    if((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
    {
@@ -29,6 +52,8 @@ int main(int argc, char *argv[])
       exit(1);
    }
 
+   printf("cree el socket\n");
+   
    memset(&serv_addr, '0', sizeof(serv_addr));
 
    serv_addr.sin_family = AF_INET;
@@ -41,27 +66,43 @@ int main(int argc, char *argv[])
       exit(1);
    }
 
+   printf("logre inet\n");
+   
    if( connect(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0)
    {
       fprintf(stderr,"\nError : Connect Failed\n");
       exit(1);
    }
+   printf("logre connect\n");
 
    printf("Enviando\n");
-   int msjsize = strlen(argv[2]);
-   printf("%s y mide %d\n", argv[2], msjsize);
+   printf("%s y mide %d\n", argv[2], size);
+
+   if(send(sockfd, &clave, sizeof(int), 0) != sizeof(int)){
+      fprintf(stderr,"\nError : Error en numero de envio\n");
+      exit(1);
+   }
+   printf("envie la clave\n");
    
-   if(send(sockfd, argv[2], msjsize, 0) != msjsize){
+   if(send(sockfd, &size, sizeof(int), 0) != sizeof(int)){
       fprintf(stderr,"\nError : Error en numero de envio\n");
       exit(1);
    }
 
+   printf("Voy con el texto\n");      
+   if(send(sockfd, buffer, size, 0) != size){
+      fprintf(stderr,"\nError : Error en numero de envio txt\n");
+      exit(1);
+   }
+
+   printf("enviado\n");
+   
    printf("Recibiendo: ");
-   while( n < msjsize){
+   while( n < size){
       int bytes = 0;
       if ((bytes = recv(sockfd, recvBuff, BUFFSIZE-1, 0)) < 1) {
-	 fprintf(stderr,"\nError : Failed to receive bytes from server\n");
-	 exit(1);
+   	 fprintf(stderr,"\nError : Failed to receive bytes from server\n");
+   	 exit(1);
       }
       n += bytes;
       recvBuff[bytes] = '\0';        /* Assure null terminated string */

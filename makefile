@@ -11,7 +11,7 @@ LINK=-I.
 PROG=server.out
 
 # Sources
-SRC= cola.c server.c
+SRC= crip.c server.c
 SRCOBJS=$(SRC:.c=.o)
 
 .SUFFIXES:.c .o
