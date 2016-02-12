@@ -6,7 +6,6 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#include <unistd.h>
 #include <errno.h>
 #include <sys/types.h>
 #include <time.h>
@@ -77,7 +76,7 @@ char* encrypt(char *text, int key)
 		if (65 <= text[i] && text[i] <= 78) { // A-N
 			code[i-ncount] = text[i] - 65;
 			
-		} else if (79 <= text[i] && text[i] &&  text[i] <= 90) { // O-Z
+		} else if (79 <= text[i] && text[i] <= 90) { // O-Z
 			code[i-ncount] = text[i] - 64;
 
 		} else if (text[i] == -61) { // Ñ (consume dos valores del arreglo)
