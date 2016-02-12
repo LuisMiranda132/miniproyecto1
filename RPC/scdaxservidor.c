@@ -25,14 +25,58 @@ dothething_1_svc(struct to_encrypt *txtnkey, struct svc_req *rqstp) {
 	}
 
 	/* Aqui van las comprobaciones de esteganografia*/
-	// int sineste = 0, coneste = 0;
-	// for (i = 0; i < l; i++) {
-	// 	if () {
-
-	// 	} else if {
-			
-	// 	}
-	// }
+	int sineste = 0, coneste = 0;
+	for (i = 0; i < l; i++) {
+		if (!sineste &&
+				(txtnkey->text[i] == 'A' || txtnkey->text[i] == 'B' || txtnkey->text[i] == 'C' ||
+				txtnkey->text[i] == 'E' || txtnkey->text[i] == 'H' || txtnkey->text[i] == 'I' || 
+				txtnkey->text[i] == 'O' || txtnkey->text[i] == 'S' || txtnkey->text[i] == 'T' || 
+				txtnkey->text[i] == 'Y' 
+				)
+			) {
+			sineste = 1;
+		} else if (!sineste &&
+					(txtnkey->text[i] == '4' || txtnkey->text[i] == '8' || txtnkey->text[i] == '(' ||
+					txtnkey->text[i] == '3' || txtnkey->text[i] == '#' || txtnkey->text[i] == '1' || 
+					txtnkey->text[i] == '0' || txtnkey->text[i] == '5' || txtnkey->text[i] == '7' || 
+					txtnkey->text[i] == '&' 
+					)
+				) { 
+			coneste = 1;
+		}
+	}
+	if (coneste && sineste) {
+		result.key = -1;
+		return &result;
+	}
+	if (coneste) {
+		cifrado = 1;
+		// Quitar la esteganografia
+		for (i = 0; i < l; i++) {
+    		switch(txtnkey->text[i]){
+    		case '4': txtnkey->text[i] = 'A';
+	 			break;
+ 			case '8': txtnkey->text[i] = 'B';
+	 			break;
+ 			case '(': txtnkey->text[i] = 'C';
+	 			break;
+ 			case '3': txtnkey->text[i] = 'E';
+	 			break;
+ 			case '#': txtnkey->text[i] = 'H';
+	 			break;
+ 			case '1': txtnkey->text[i] = 'I';
+	 			break;
+ 			case '0': txtnkey->text[i] = 'O';
+				break;
+  			case '5': txtnkey->text[i] = 'S';
+	 			break;
+ 			case '7': txtnkey->text[i] = 'T';
+	 			break;
+ 			case '&': txtnkey->text[i] = 'Y';
+				break;
+			}
+		}
+	}
 
 	/* Si ya esta cifrado, descifrar */
 	if (cifrado) {
@@ -94,56 +138,30 @@ dothething_1_svc(struct to_encrypt *txtnkey, struct svc_req *rqstp) {
 
 
 	//Agregar esteganografia
-	// for (i = 0; i < l - ncount + ncount2; i++) {
-	// 	switch(data[i]){
-	// 		case 'A': data[i] = '4';
-	//  			break;
- // 			case 'B': data[i] = '8';
-	//  			break;
- // 			case 'C': data[i] = '(';
-	//  			break;
- // 			case 'E': data[i] = '3';
-	//  			break;
- // 			case 'H': data[i] = '#';
-	//  			break;
- // 			case 'I': data[i] = '1';
-	//  			break;
- // 			case 'O': data[i] = '0';
-	//  			break;
- // 			case 'S': data[i] = '5';
-	//  			break;
- // 			case 'T': data[i] = '7';
-	//  			break;
- // 			case 'Y': data[i] = '&';
-	//  			break;
- //    	}
- //    }
-
-    //Quitar esteganografia
-    // for (i = 0; i < size; i++) {
-    // 	switch(text[i]){
-    // 		case '4': text[i] = 'A';
-	 		// 	break;
- 			// case '8': text[i] = 'B';
-	 		// 	break;
- 			// case '(': text[i] = 'C';
-	 		// 	break;
- 			// case '3': text[i] = 'E';
-	 		// 	break;
- 			// case '#': text[i] = 'H';
-	 		// 	break;
- 			// case '1': text[i] = 'I';
-	 		// 	break;
- 			// case '0': text[i] = 'O';
-				// break;
-  		// 	case '5': text[i] = 'S';
-	 		// 	break;
- 			// case '7': text[i] = 'T';
-	 		// 	break;
- 			// case '&': text[i] = 'Y';
-	 		// 	break;
-    // 	}
-    // }
+	for (i = 0; i < l - ncount + ncount2; i++) {
+		switch(data[i]){
+			case 'A': data[i] = '4';
+	 			break;
+ 			case 'B': data[i] = '8';
+	 			break;
+ 			case 'C': data[i] = '(';
+	 			break;
+ 			case 'E': data[i] = '3';
+	 			break;
+ 			case 'H': data[i] = '#';
+	 			break;
+ 			case 'I': data[i] = '1';
+	 			break;
+ 			case 'O': data[i] = '0';
+	 			break;
+ 			case 'S': data[i] = '5';
+	 			break;
+ 			case 'T': data[i] = '7';
+	 			break;
+ 			case 'Y': data[i] = '&';
+	 			break;
+		}
+	}
 
 	result.key = 0;
 	result.text = data;
