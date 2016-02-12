@@ -72,6 +72,12 @@ int main (int argc, char *argv[]) {
 
 	printf("Texto: %s, Valor: %d\n", output->text, output->key);
 
+	input.text = output->text;
+
+	output = dothething_1 (&input,cl);
+
+	printf("Texto: %s, Valor: %d\n", output->text, output->key);
+
 
 	return 0;
 }

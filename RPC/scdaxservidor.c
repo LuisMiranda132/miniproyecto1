@@ -138,28 +138,30 @@ dothething_1_svc(struct to_encrypt *txtnkey, struct svc_req *rqstp) {
 
 
 	//Agregar esteganografia
-	for (i = 0; i < l - ncount + ncount2; i++) {
-		switch(data[i]){
-			case 'A': data[i] = '4';
-	 			break;
- 			case 'B': data[i] = '8';
-	 			break;
- 			case 'C': data[i] = '(';
-	 			break;
- 			case 'E': data[i] = '3';
-	 			break;
- 			case 'H': data[i] = '#';
-	 			break;
- 			case 'I': data[i] = '1';
-	 			break;
- 			case 'O': data[i] = '0';
-	 			break;
- 			case 'S': data[i] = '5';
-	 			break;
- 			case 'T': data[i] = '7';
-	 			break;
- 			case 'Y': data[i] = '&';
-	 			break;
+	if (!cifrado) {
+		for (i = 0; i < l - ncount + ncount2; i++) {
+			switch(data[i]){
+				case 'A': data[i] = '4';
+		 			break;
+	 			case 'B': data[i] = '8';
+		 			break;
+	 			case 'C': data[i] = '(';
+		 			break;
+	 			case 'E': data[i] = '3';
+		 			break;
+	 			case 'H': data[i] = '#';
+		 			break;
+	 			case 'I': data[i] = '1';
+		 			break;
+	 			case 'O': data[i] = '0';
+		 			break;
+	 			case 'S': data[i] = '5';
+		 			break;
+	 			case 'T': data[i] = '7';
+		 			break;
+	 			case 'Y': data[i] = '&';
+		 			break;
+			}
 		}
 	}
 
