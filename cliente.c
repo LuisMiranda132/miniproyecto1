@@ -8,31 +8,50 @@
 #include <unistd.h>
 #include <errno.h>
 #include <arpa/inet.h>
+#include <getopt.h>
 
 #define BUFFSIZE 1024
 
 int main(int argc, char *argv[])
 {
-   int sockfd = 0, n = 0, clave;
+   int sockfd = 0, n = 0, clave, option = 0, port;
    char recvBuff[BUFFSIZE];
    char sendBuff[1024];
    FILE *file;
-   char *buffer;
+   char *buffer, *ddespl, *ip;
    long size;
     
    struct sockaddr_in serv_addr;
 
-   if (argc != 5) {
-      fprintf(stderr, "USAGE: cliente <server_ip> <file> <port> <clave> \n");
+   printf("%d\n",argc);
+   if (argc != 11) {
+      fprintf(stderr,"Uso: scdax_cli -i <dir_ip> -p <puerto_scdax_svr> -c <clave> -a <dir_despl> -f <arch_input>\n"); 
       exit(1);
    }
+   
+   while((option = getopt(argc, argv, "i:p:c:a:f:")) != -1)
+   {
+      switch(option){
+      case 'i' : ip = optarg;
+	 break;
+      case 'p' : port = atoi(optarg);
+	 break;
+      case 'c' : clave = atoi(optarg);
+	 break;
+      case 'a' : ddespl = optarg;
+	 break;
+      case 'f' : file = fopen(optarg,"r");
+	 break;
+      default: fprintf(stderr,"Uso: scdax_cli -i <dir_ip> -p <puerto_scdax_svr> -c <clave> -a <dir_despl> -f <arch_input>\n");
+		exit(0);
+      }
+      
+   }
+   
 
-   file = fopen(argv[2],"r");
    fseek(file, 0, SEEK_END);
    size = ftell(file);
    rewind(file);
-
-   clave = atoi(argv[4]);
    
    buffer = (char*) malloc (sizeof(char)*size);
 
@@ -57,10 +76,10 @@ int main(int argc, char *argv[])
    memset(&serv_addr, '0', sizeof(serv_addr));
 
    serv_addr.sin_family = AF_INET;
-   serv_addr.sin_port = htons(atoi(argv[3]));
+   serv_addr.sin_port = htons(port);
 
    // convert text to IP address 
-   if(inet_pton(AF_INET, argv[1], &serv_addr.sin_addr)<=0)
+   if(inet_pton(AF_INET, ip, &serv_addr.sin_addr)<=0)
    {
       fprintf(stderr,"\nError: inet");
       exit(1);
