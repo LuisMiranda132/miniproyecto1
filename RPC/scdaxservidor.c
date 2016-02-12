@@ -25,6 +25,14 @@ dothething_1_svc(struct to_encrypt *txtnkey, struct svc_req *rqstp) {
 	}
 
 	/* Aqui van las comprobaciones de esteganografia*/
+	// int sineste = 0, coneste = 0;
+	// for (i = 0; i < l; i++) {
+	// 	if () {
+
+	// 	} else if {
+			
+	// 	}
+	// }
 
 	/* Si ya esta cifrado, descifrar */
 	if (cifrado) {
@@ -83,6 +91,60 @@ dothething_1_svc(struct to_encrypt *txtnkey, struct svc_req *rqstp) {
 			data[i] = code[i-ncount3];
 		}
 	}
+
+
+	//Agregar esteganografia
+	// for (i = 0; i < l - ncount + ncount2; i++) {
+	// 	switch(data[i]){
+	// 		case 'A': data[i] = '4';
+	//  			break;
+ // 			case 'B': data[i] = '8';
+	//  			break;
+ // 			case 'C': data[i] = '(';
+	//  			break;
+ // 			case 'E': data[i] = '3';
+	//  			break;
+ // 			case 'H': data[i] = '#';
+	//  			break;
+ // 			case 'I': data[i] = '1';
+	//  			break;
+ // 			case 'O': data[i] = '0';
+	//  			break;
+ // 			case 'S': data[i] = '5';
+	//  			break;
+ // 			case 'T': data[i] = '7';
+	//  			break;
+ // 			case 'Y': data[i] = '&';
+	//  			break;
+ //    	}
+ //    }
+
+    //Quitar esteganografia
+    // for (i = 0; i < size; i++) {
+    // 	switch(text[i]){
+    // 		case '4': text[i] = 'A';
+	 		// 	break;
+ 			// case '8': text[i] = 'B';
+	 		// 	break;
+ 			// case '(': text[i] = 'C';
+	 		// 	break;
+ 			// case '3': text[i] = 'E';
+	 		// 	break;
+ 			// case '#': text[i] = 'H';
+	 		// 	break;
+ 			// case '1': text[i] = 'I';
+	 		// 	break;
+ 			// case '0': text[i] = 'O';
+				// break;
+  		// 	case '5': text[i] = 'S';
+	 		// 	break;
+ 			// case '7': text[i] = 'T';
+	 		// 	break;
+ 			// case '&': text[i] = 'Y';
+	 		// 	break;
+    // 	}
+    // }
+
 	result.key = 0;
 	result.text = data;
 	return &result;
