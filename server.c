@@ -12,8 +12,17 @@
 #include <time.h>
 #include <getopt.h>
 #include <signal.h>
+#include <time.h>
 
 #include "crip.h"
+
+/**
+ * @author Luis Miranda 10-10463
+ * @author Oskar Gonzales 09-10351
+ *
+ * Codigo del cliente de SCDAX
+ *
+ */
 
 #define MAXCONECTION 5
 #define BUFFSIZE 1024
@@ -21,111 +30,147 @@
 pthread_t tid[MAXCONECTION];
 FILE *file;
 
+time_t t;
+struct tm tm;
+
+// estructura para pasar datos al hilo
+struct arg_struct
+{
+   char* ip;
+   int clientfd;
+};
+
+// se encarga de guardar todo cuando se cierra el servidor
 void signal_exit(int signum)
 {
    fclose(file);
    exit(signum);
 }
 
-//void HandleClient(int sock)
+/**
+ * Funcion se encarga de la comunicacion con un cliente cuando este se conecte
+ */
 void* HandleClient(void *args)
 {
-   int sock = *((int *) args);
+   struct arg_struct *dummy = args;
+   int sock = dummy->clientfd;
    char recvBuff[BUFFSIZE];
    int n = 0, num, clave, m = -1, chk;
    char *result;
 
    if((m = recv(sock, &clave, sizeof(int), 0)) < 0)
    {
-      fprintf(stderr,"\nError : Error en numero recibido\n");
-      exit(1);
+      t = time(NULL);
+      tm = *localtime(&t);
+      fprintf(file, "[%d-%d-%d %d:%d:%d] [cliente %s] [error] Error recibiendo datos\n", tm.tm_mday,
+	     tm.tm_mon + 1, tm.tm_year + 1900, tm.tm_hour, tm.tm_min, tm.tm_sec, dummy->ip);
+      close(sock);
+      return;
    }
-   printf("la clave es: %d\n",clave);
+   t = time(NULL);
+   tm = *localtime(&t);
+   fprintf(file, "[%d-%d-%d %d:%d:%d] [cliente %s] Recibi clave\n", tm.tm_mday, tm.tm_mon + 1,
+	  tm.tm_year + 1900, tm.tm_hour, tm.tm_min, tm.tm_sec, dummy->ip);
       
    if((m = recv(sock, &num, sizeof(int), 0)) < 0)
    {
-      fprintf(stderr,"\nError : Error en numero recibido\n");
-      exit(1);
+      t = time(NULL);
+      tm = *localtime(&t);
+      fprintf(file, "[%d-%d-%d %d:%d:%d] [cliente %s] [error] Error recibiendo datos\n", tm.tm_mday, tm.tm_mon + 1, tm.tm_year + 1900, tm.tm_hour, tm.tm_min, tm.tm_sec, dummy->ip);
+      close(sock);
+      return;
    }
    
-   printf("Voy a recibir %d\n", num);
-
-   printf("Recibiendo: ");
+   t = time(NULL);
+   tm = *localtime(&t);
+   fprintf(file, "[%d-%d-%d %d:%d:%d] [cliente %s] Recibi numero\n", tm.tm_mday, tm.tm_mon + 1,
+	  tm.tm_year + 1900, tm.tm_hour, tm.tm_min, tm.tm_sec, dummy->ip);
    while( n < num){
       int bytes = 0;
       if ((bytes = recv(sock, recvBuff, BUFFSIZE-1, 0)) < 1) {
-   	 fprintf(stderr,"\nError : Failed to receive bytes %d\n", bytes);
-   	 exit(1);
+	 t = time(NULL);
+	 tm = *localtime(&t);
+	 fprintf(file, "[%d-%d-%d %d:%d:%d] [cliente %s] [error] Error recibiendo datos\n", tm.tm_mday,
+		tm.tm_mon + 1, tm.tm_year + 1900, tm.tm_hour, tm.tm_min, tm.tm_sec, dummy->ip);
+	 close(sock);
+	 return;
       }
       n += bytes;
-      recvBuff[bytes] = '\0';        /* Assure null terminated string */
+      recvBuff[bytes] = '\0';
    }
+
+   t = time(NULL);
+   tm = *localtime(&t);
+   fprintf(file, "[%d-%d-%d %d:%d:%d] [cliente %s] Recibi texto\n", tm.tm_mday, tm.tm_mon + 1,
+	  tm.tm_year + 1900, tm.tm_hour, tm.tm_min, tm.tm_sec, dummy->ip);
+
 
    chk = check(recvBuff);
    if(chk == -1){
-      printf("esto no lo hice yo chamin\n");
+      t = time(NULL);
+      tm = *localtime(&t);
+      fprintf(file, "[%d-%d-%d %d:%d:%d] [cliente %s] El texto no es valido\n", tm.tm_mday, tm.tm_mon + 1,
+	     tm.tm_year + 1900, tm.tm_hour, tm.tm_min, tm.tm_sec, dummy->ip);
+      num = 0;
    }else if(chk){
-      printf("voy a desencriptarlo\n");
-      printf(recvBuff);
-      printf("\n");
+      t = time(NULL);
+      tm = *localtime(&t);
+      fprintf(file, "[%d-%d-%d %d:%d:%d] [cliente %s] El texto va a ser desencriptado\n", tm.tm_mday,
+	     tm.tm_mon + 1,tm.tm_year + 1900, tm.tm_hour, tm.tm_min, tm.tm_sec, dummy->ip);
       stganograf(recvBuff);
-      printf(recvBuff);
-      printf("\n");
       result = decrypt(recvBuff, clave);
-      printf(result);
-      printf("\n");      
    }else{
-      printf("voy a encriptarlo\n");
-      printf(recvBuff);
-      printf("\n");
+      t = time(NULL);
+      tm = *localtime(&t);
+      fprintf(file, "[%d-%d-%d %d:%d:%d] [cliente %s] El texto va a ser encriptado\n", tm.tm_mday,
+	     tm.tm_mon + 1,tm.tm_year + 1900, tm.tm_hour, tm.tm_min, tm.tm_sec, dummy->ip);
       result = encrypt(recvBuff, clave);
-      printf(result);
-      printf("\n");
       stganograf(result);
-      printf(result);
-      printf("\n");
+   }
+
+   if(send(sock, &num, sizeof(int), 0) != sizeof(int)){
+      t = time(NULL);
+      tm = *localtime(&t);
+      fprintf(file, "[%d-%d-%d %d:%d:%d] [cliente %s] [error] Error enviando datos\n", tm.tm_mday,
+	     tm.tm_mon + 1, tm.tm_year + 1900, tm.tm_hour, tm.tm_min, tm.tm_sec, dummy->ip);
+      close(sock);
+      return;
+   }
+
+   if(!num){
+      close(sock);
+      return ;
    }
    
-//   sleep(5);
-   
-   printf("Enviando respuesta\n");
    if(send(sock, result, num, 0) != num){
-      fprintf(stderr,"\nError : Error enviando al cliente\n");
-      exit(1);
+      t = time(NULL);
+      tm = *localtime(&t);
+      fprintf(file, "[%d-%d-%d %d:%d:%d] [cliente %s] [error] Error enviando datos\n", tm.tm_mday,
+	     tm.tm_mon + 1, tm.tm_year + 1900, tm.tm_hour, tm.tm_min, tm.tm_sec, dummy->ip);
+      close(sock);
+      return;
    }
-   printf("Respuesta enviada\n");
-         
-   /* while( n > 0 ){ */
-   /*    if(send(sock, recvBuff, n, 0) != n){ */
-   /* 	 fprintf(stderr,"\nError : Error enviando al cliente\n"); */
-   /* 	 exit(1); */
-   /*    } */
-   /*    if((n = recv(sock, recvBuff, BUFFSIZE, 0)) < 0) */
-   /*    { */
-   /* 	 fprintf(stderr,"\nError : Error en numero recibido\n"); */
-   /* 	 exit(1); */
-   /*    } */
-   /* } */
+   t = time(NULL);
+   tm = *localtime(&t);
+   fprintf(file, "[%d-%d-%d %d:%d:%d] [cliente %s] El texto fue enviado\n", tm.tm_mday,
+	  tm.tm_mon + 1,tm.tm_year + 1900, tm.tm_hour, tm.tm_min, tm.tm_sec, dummy->ip);
+
    close(sock);
 }
 
-
+/**
+ * Funcion main del cliente
+ */
 int main(int argc, char *argv[])
 {
-   /* int i = 10; */
    pthread_t t1;
-   /* pthread_create(&(tid[0]),NULL, foobarbaz, (void *) &i); */
-
-   /* printf("esperando el hijo\n"); */
-   /* pthread_join(tid[0], NULL); */
-   /* printf("Chao\n"); */
 
    int serverfd = 0, clientfd = 0, n = 0;
    struct sockaddr_in serv_addr, client_addr;
    int port, option;
-
-   time_t ticks;
-
+   struct arg_struct argumentos;
+   
+   time_t ticks; 
    signal(SIGINT, signal_exit);
    
    printf("%d\n",argc);
@@ -133,7 +178,8 @@ int main(int argc, char *argv[])
       fprintf(stderr,"Uso: scdax_svr -l <puerto_scdax_svr> -b <archivo_bitácora>\n"); 
       exit(1);
    }
-   
+
+   // Recibe los argumentos 
    while((option = getopt(argc, argv, "l:b:")) != -1)
    {
       switch(option){
@@ -147,10 +193,12 @@ int main(int argc, char *argv[])
       
    }
 
-   fprintf(file, "prueba\n");
-   
+   // creacion del socket 
    serverfd = socket(AF_INET, SOCK_STREAM, 0);
-   printf("logre socket");
+   t = time(NULL);
+   tm = *localtime(&t);
+   fprintf(file, "[%d-%d-%d %d:%d:%d] Logre abrir socket\n", tm.tm_mday,
+	  tm.tm_mon + 1, tm.tm_year + 1900, tm.tm_hour, tm.tm_min, tm.tm_sec);
    
    memset(&serv_addr, '0', sizeof(serv_addr));
 
@@ -160,36 +208,45 @@ int main(int argc, char *argv[])
 
    if(bind(serverfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0)
    {
-      fprintf(stderr, "Bind failed");
+      t = time(NULL);
+      tm = *localtime(&t);
+      fprintf(file, "[%d-%d-%d %d:%d:%d] [Error] Falle bind\n", tm.tm_mday,
+	     tm.tm_mon + 1, tm.tm_year + 1900, tm.tm_hour, tm.tm_min, tm.tm_sec);
       exit(1);
    }
    
-   printf("logre bind");
-   
+   t = time(NULL);
+   tm = *localtime(&t);
+   fprintf(file, "[%d-%d-%d %d:%d:%d] Logre bind\n", tm.tm_mday,
+	  tm.tm_mon + 1, tm.tm_year + 1900, tm.tm_hour, tm.tm_min, tm.tm_sec);
+
    if( listen(serverfd, MAXCONECTION) < 0)
    {
-      fprintf(stderr, "Listen failed");
-      exit(1);      
+      t = time(NULL);
+      tm = *localtime(&t);
+      fprintf(file, "[%d-%d-%d %d:%d:%d] [Error] Falle listen\n", tm.tm_mday,
+	     tm.tm_mon + 1, tm.tm_year + 1900, tm.tm_hour, tm.tm_min, tm.tm_sec);
+      exit(1);
    }
+   t = time(NULL);
+   tm = *localtime(&t);
+   fprintf(file, "[%d-%d-%d %d:%d:%d] Logre listen\n", tm.tm_mday,
+	  tm.tm_mon + 1, tm.tm_year + 1900, tm.tm_hour, tm.tm_min, tm.tm_sec);
 
-   printf("logre listen");
-
+   // espera por clientes
    while(1){
       unsigned int clientlen = sizeof(client_addr);
-      if((clientfd = accept(serverfd, (struct sockaddr *) &client_addr, &clientlen)) < 0)
+      if((argumentos.clientfd = accept(serverfd, (struct sockaddr *) &client_addr, &clientlen)) < 0)
       {
-	 fprintf(stderr, "Accept failed\n");
-	 exit(1);
+	 t = time(NULL);
+	 tm = *localtime(&t);
+	 fprintf(file, "[%d-%d-%d %d:%d:%d] [Error] Falle accept\n", tm.tm_mday,
+		tm.tm_mon + 1, tm.tm_year + 1900, tm.tm_hour, tm.tm_min, tm.tm_sec);
       }
-      printf("Cliente conectado: %s\n", inet_ntoa(client_addr.sin_addr));
-      pthread_create(&t1,NULL, HandleClient, (void *) &clientfd);
-//      HandleClient(clientfd);
+      argumentos.ip = inet_ntoa(client_addr.sin_addr);
+      t = time(NULL);
+      tm = *localtime(&t);
+      fprintf(file, "[%d-%d-%d %d:%d:%d] [cliente %s] Cliente conectado\n", tm.tm_mday, tm.tm_mon + 1, tm.tm_year + 1900, tm.tm_hour, tm.tm_min, tm.tm_sec, argumentos.ip);
+      pthread_create(&t1,NULL, HandleClient, (void *) &argumentos);
    }
-   
-      
-      
-      /* close(connfd); */
-   /*    sleep(1); */
-   /* } */
-   
 }

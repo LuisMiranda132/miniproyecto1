@@ -8,7 +8,7 @@ DFLAGS=-g -lpthread
 LINK=-I.
 
 # Program name
-PROG=server.out
+PROG=scdax_srv
 
 # Sources
 SRC= crip.c server.c
@@ -17,6 +17,7 @@ SRCOBJS=$(SRC:.c=.o)
 .SUFFIXES:.c .o
 
 all:$(PROG)
+	gcc -g -o scdax_cli cliente.c
 
 $(PROG):$(SRCOBJS)
 	$(CC) $(DFLAGS) -o $@ $(SRCOBJS) $(LINK)
@@ -33,4 +34,4 @@ debug_compile: $(PROG)
 
 # CLEAN
 clean: 
-	$(RM) *.o *~ $(PROG)
+	$(RM) *.o *~ $(PROG) scdax_cli

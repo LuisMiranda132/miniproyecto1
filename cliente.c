@@ -10,11 +10,22 @@
 #include <arpa/inet.h>
 #include <getopt.h>
 
+/**
+ * @author Luis Miranda 10-10463
+ * @author Oskar Gonzales 09-10351
+ *
+ * Codigo del cliente de SCDAX
+ *
+ */
+
 #define BUFFSIZE 1024
 
+/**
+ * Funcion main del cliente
+ */
 int main(int argc, char *argv[])
 {
-   int sockfd = 0, n = 0, clave, option = 0, port;
+   int sockfd = 0, n = 0, clave, option = 0, port, intentos = 0;
    char recvBuff[BUFFSIZE];
    char sendBuff[1024];
    FILE *file;
@@ -23,12 +34,12 @@ int main(int argc, char *argv[])
     
    struct sockaddr_in serv_addr;
 
-   printf("%d\n",argc);
    if (argc != 11) {
       fprintf(stderr,"Uso: scdax_cli -i <dir_ip> -p <puerto_scdax_svr> -c <clave> -a <dir_despl> -f <arch_input>\n"); 
       exit(1);
    }
-   
+
+   // Recibe los argumentos 
    while((option = getopt(argc, argv, "i:p:c:a:f:")) != -1)
    {
       switch(option){
@@ -47,7 +58,15 @@ int main(int argc, char *argv[])
       }
       
    }
-   
+
+   if (strcmp(ddespl,"derecha")==0) {
+      clave = -clave;
+   } else if (strcmp(ddespl,"izquierda")==0) {
+      /* all good */
+   } else {
+      fprintf(stderr,"La direccion de desplazamiento debe ser derecha o izquierda\n");
+      exit(0);
+   }
 
    fseek(file, 0, SEEK_END);
    size = ftell(file);
@@ -57,66 +76,70 @@ int main(int argc, char *argv[])
 
    if( fread (buffer, 1, size, file) != size)
    {
-      fprintf(stderr, "\nError: leyendo ar chivo\n");
+      fprintf(stderr, "\nError: leyendo archivo\n");
       exit(1);
    }
+   fclose(file);
 
-   printf("El buffer: ");
-   printf(buffer);
-   printf("\n");
-   
+   // crea el socket
    if((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
    {
-      fprintf(stderr, "\nError: No lo pude crear\n");
+      fprintf(stderr, "\nError: No pude crear socket\n");
       exit(1);
    }
-
-   printf("cree el socket\n");
    
    memset(&serv_addr, '0', sizeof(serv_addr));
 
    serv_addr.sin_family = AF_INET;
    serv_addr.sin_port = htons(port);
 
-   // convert text to IP address 
    if(inet_pton(AF_INET, ip, &serv_addr.sin_addr)<=0)
    {
       fprintf(stderr,"\nError: inet");
       exit(1);
    }
 
-   printf("logre inet\n");
-   
-   if( connect(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0)
+   // se conecta con el servidor
+   while(connect(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0)
    {
-      fprintf(stderr,"\nError : Connect Failed\n");
-      exit(1);
+      intentos++;
+      if(intentos == 3){
+	 fprintf(stderr,"\nError : Connect Failed\n");
+	 exit(1);
+      }
+      
    }
-   printf("logre connect\n");
 
-   printf("Enviando\n");
-   printf("%s y mide %d\n", argv[2], size);
-
+   // a partir de aqui comienza la comunicacion con el servidor
    if(send(sockfd, &clave, sizeof(int), 0) != sizeof(int)){
       fprintf(stderr,"\nError : Error en numero de envio\n");
       exit(1);
    }
-   printf("envie la clave\n");
    
    if(send(sockfd, &size, sizeof(int), 0) != sizeof(int)){
       fprintf(stderr,"\nError : Error en numero de envio\n");
       exit(1);
    }
 
-   printf("Voy con el texto\n");      
    if(send(sockfd, buffer, size, 0) != size){
       fprintf(stderr,"\nError : Error en numero de envio txt\n");
       exit(1);
    }
 
-   printf("enviado\n");
+   if((n = recv(sockfd, &size, sizeof(int), 0)) < 0)
+   {
+      fprintf(stderr,"\nError : Error en numero recibido\n");
+      exit(1);
+   }
+
+   if(!size){
+      fprintf(stderr,"\nError : El archivo no es valido para encriptar o desencriptar\n");
+      exit(1);
+   }
    
-   printf("Recibiendo: ");
+   n = 0;
+   file = fopen("salida.txt","w");
+      
    while( n < size){
       int bytes = 0;
       if ((bytes = recv(sockfd, recvBuff, BUFFSIZE-1, 0)) < 1) {
@@ -126,8 +149,12 @@ int main(int argc, char *argv[])
       n += bytes;
       recvBuff[bytes] = '\0';        /* Assure null terminated string */
       printf(recvBuff);
+      fprintf(file, recvBuff);
    }
 
+   fprintf(file,"\n");
+   fclose(file);
+   
    printf("\n");
    close(sockfd);
    exit(0);
